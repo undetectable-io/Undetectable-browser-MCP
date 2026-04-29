@@ -1,10 +1,6 @@
 # undetectable-local-api-mcp-ts
 
-TypeScript MCP server wrapping the Undetectable Browser Local API (v1.5).
-
-Async / parallel-capable rewrite of the Python version. All tools use native
-`fetch` with `AbortController` timeout. Multiple in-flight tool calls run
-concurrently against the Undetectable HTTP API.
+[Model Context Protocol](https://modelcontextprotocol.io/) server (TypeScript) wrapping the [Undetectable Browser](https://undetectable.io/) Local API. Lets Claude / any MCP client drive the antidetect browser: create profiles, manage proxies, import/export cookies, start/stop browsers in parallel, attach via CDP.
 
 ## Install
 
