@@ -5,7 +5,8 @@
 ## Install
 
 ```bash
-cd "C:/Users/User/Documents/Test MCP TS"
+git clone https://github.com/undetectable-io/Undetectable-browser-MCP
+cd Undetectable-browser-MCP
 npm install
 npm run build
 ```
@@ -13,11 +14,14 @@ npm run build
 ## Run
 
 ```bash
-# Dev (TS direct)
-npm run dev
-
 # Production (compiled JS)
 npm start
+
+# Dev (TS direct, no build step)
+npm run dev
+
+# Typecheck only
+npm run typecheck
 ```
 
 ## Configure in Claude Desktop
