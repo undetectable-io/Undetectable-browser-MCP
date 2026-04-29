@@ -1,6 +1,6 @@
 # undetectable-local-api-mcp-ts
 
-[Model Context Protocol](https://modelcontextprotocol.io/) server (TypeScript) wrapping the [Undetectable Browser](https://undetectable.io/) Local API. Lets Claude / any MCP client drive the antidetect browser: create profiles, manage proxies, import/export cookies, start/stop browsers in parallel, attach via CDP.
+[Model Context Protocol](https://modelcontextprotocol.io/) server (TypeScript) wrapping the [Undetectable Browser](https://undetectable.io/) Local API https://api-docs.undetectable.io/. Lets Claude / any MCP client drive the antidetect browser: create profiles, manage proxies, import/export cookies, start/stop browsers in parallel, attach via CDP.
 
 ## Install
 
