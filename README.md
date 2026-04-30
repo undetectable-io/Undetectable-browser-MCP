@@ -17,9 +17,6 @@ npm run build
 # Production (compiled JS)
 npm start
 
-# Dev (TS direct, no build step)
-npm run dev
-
 # Typecheck only
 npm run typecheck
 ```
@@ -58,8 +55,6 @@ For dev (no build step), use `tsx`:
 - `UNDETECTABLE_TIMEOUT` — seconds, default `60`
 
 ## Tools
-
-Mirrors the Python server (24 single-call tools + 7 batch tools + `raw_request`):
 
 **Single:** `status`, `close_software`, `list_profiles`, `get_profile_info`,
 `start_profile`, `stop_profile`, `create_profile`, `update_profile`,
