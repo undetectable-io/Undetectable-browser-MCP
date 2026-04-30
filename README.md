@@ -15,10 +15,7 @@ npm run build
 
 ```bash
 # Production (compiled JS)
-npm start
-
-# Typecheck only
-npm run typecheck
+node dist/server.js
 ```
 
 ## Configure in Claude Desktop
@@ -30,7 +27,7 @@ Add to `claude_desktop_config.json`:
   "mcpServers": {
     "undetectable-local-api-ts": {
       "command": "node",
-      "args": ["C:/Users/User/Documents/Test MCP TS/dist/server.js"],
+      "args": ["<path-to-clone>/dist/server.js"],
       "env": {
         "UNDETECTABLE_BASE_URL": "http://127.0.0.1:25325",
         "UNDETECTABLE_TIMEOUT": "60"
@@ -40,14 +37,7 @@ Add to `claude_desktop_config.json`:
 }
 ```
 
-For dev (no build step), use `tsx`:
-
-```json
-{
-  "command": "npx",
-  "args": ["-y", "tsx", "C:/Users/User/Documents/Test MCP TS/src/server.ts"]
-}
-```
+Replace `<path-to-clone>` with the absolute path to your local clone of this repository.
 
 ## Env
 
@@ -55,6 +45,8 @@ For dev (no build step), use `tsx`:
 - `UNDETECTABLE_TIMEOUT` — seconds, default `60`
 
 ## Tools
+
+24 single-call tools + 7 batch tools + `raw_request`:
 
 **Single:** `status`, `close_software`, `list_profiles`, `get_profile_info`,
 `start_profile`, `stop_profile`, `create_profile`, `update_profile`,
