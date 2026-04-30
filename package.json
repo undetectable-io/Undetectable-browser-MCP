@@ -1,7 +1,7 @@
 {
   "name": "undetectable-local-api-mcp-ts",
   "version": "1.0.0",
-  "description": "MCP server (TypeScript) wrapping the Undetectable Browser Local API.",
+  "description": "MCP server (TypeScript) wrapping the Undetectable Browser Local API. Manage profiles, proxies, cookies, and run concurrent browser operations via Claude or any MCP client.",
   "type": "module",
   "main": "dist/server.js",
   "bin": { "undetectable-mcp": "dist/server.js" },
