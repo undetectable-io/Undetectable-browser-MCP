@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /**
  * undetectable-local-api — MCP server (TypeScript) wrapping the Undetectable
  * Browser Local API (v1.5).
