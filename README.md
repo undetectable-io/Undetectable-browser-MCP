@@ -4,30 +4,17 @@
 
 ## Install
 
-```bash
-git clone https://github.com/undetectable-io/Undetectable-browser-MCP
-cd Undetectable-browser-MCP
-npm install
-npm run build
-```
+### As an MCP server (recommended)
 
-## Run
-
-```bash
-# Production (compiled JS)
-node dist/server.js
-```
-
-## Configure in Claude Desktop
-
-Add to `claude_desktop_config.json`:
+No install step needed — `npx` will fetch and run the package on demand.
+Add to your `claude_desktop_config.json`:
 
 ```json
 {
   "mcpServers": {
     "undetectable-local-api-ts": {
-      "command": "node",
-      "args": ["<path-to-clone>/dist/server.js"],
+      "command": "npx",
+      "args": ["-y", "undetectable-local-api-mcp-ts"],
       "env": {
         "UNDETECTABLE_BASE_URL": "http://127.0.0.1:25325",
         "UNDETECTABLE_TIMEOUT": "60"
@@ -36,13 +23,27 @@ Add to `claude_desktop_config.json`:
   }
 }
 ```
-
-Replace `<path-to-clone>` with the absolute path to your local clone of this repository.
-
-## Env
+#### Env
 
 - `UNDETECTABLE_BASE_URL` — default `http://127.0.0.1:25325`
 - `UNDETECTABLE_TIMEOUT` — seconds, default `60`
+
+### From source (for contributors)
+```bash
+git clone https://github.com/undetectable-io/Undetectable-browser-MCP
+cd Undetectable-browser-MCP
+npm install
+npm run build
+```
+
+#### Run
+
+```bash
+# Production (compiled JS)
+node dist/server.js
+```
+
+
 
 ## Tools
 
