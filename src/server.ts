@@ -197,7 +197,7 @@ server.tool(
 
 server.tool(
   "create_profile",
-  'Create a new profile. POST /profile/create. ALL fields optional — omitted fields fall back to the Undetectable program defaults. The program picks a random fingerprint config matching whatever combination of os_name / browser / resolution / cpu / memory you supply (os_name takes priority; passing only os_name picks any browser for that OS). For an exact fingerprint pass `configid` (see list_configs). To create profile without proxy pass proxy="none".',
+  'Create a new profile. POST /profile/create. ALL fields optional — omitted fields fall back to the Undetectable program defaults. The program picks a random fingerprint config matching whatever combination of os_name / browser / resolution / cpu / memory you supply (os_name takes priority; passing only os_name picks any browser for that OS). For an exact fingerprint pass `configid` (see list_configs). To create profile without proxy pass proxy="none". Recommended defaults: desktop = host OS (Windows or Mac) + browser="Chrome"; mobile = os_name="Android" + browser="Chrome". Avoid FireFox / Safari — their engines (Gecko / WebKit) are emulated less faithfully than Chromium and detection rates are higher.',
   {
     name: z.string().optional(),
     os_name: z.enum(OS_VALUES).optional(),
