@@ -73,6 +73,21 @@ function clean<T extends Record<string, unknown>>(o: T): Partial<T> {
   return out as Partial<T>;
 }
 
+// Some MCP clients stringify array arguments into a JSON string before
+// sending them. This preprocess accepts either a real array or its JSON
+// representation and feeds the array through the inner schema.
+function arrayOrJsonString<T extends z.ZodTypeAny>(item: T) {
+  return z.preprocess((v) => {
+    if (typeof v !== "string") return v;
+    try {
+      const parsed = JSON.parse(v);
+      return parsed;
+    } catch {
+      return v;
+    }
+  }, z.array(item));
+}
+
 // ---------- Server ----------
 
 const server = new McpServer({ name: "undetectable-local-api-ts", version: "1.0.0" });
@@ -94,6 +109,18 @@ server.tool(
 );
 
 // ===== Profiles =====
+//
+// IMPORTANT — profile state requirements:
+//   Mutation/inspection endpoints below (update_profile, clear_profile_cache,
+//   clear_profile_cookies, clear_profile_data, get_profile_cookies,
+//   update_browser_version) REQUIRE the profile to be STOPPED. Running profiles
+//   return errors like "Profile is started", "Profile is not available!" or
+//   "Unable to init cookies storage". Call stop_profile first if needed.
+//
+// Proxy convention:
+//   To create or update a profile WITHOUT a proxy (or to remove an existing
+//   proxy from a profile), pass proxy="none" in create_profile / update_profile.
+//
 
 server.tool(
   "list_profiles",
@@ -134,25 +161,25 @@ server.tool(
 
 server.tool(
   "create_profile",
-  "Create a new profile. POST /profile/create. All fields optional.",
+  'Create a new profile. POST /profile/create. All fields optional. To create profile without proxy pass proxy="none".',
   {
     name: z.string().optional(),
     os_name: z.string().optional(),
     browser: z.string().optional(),
     cpu: z.number().optional(),
     memory: z.number().optional(),
-    tags: z.array(z.string()).optional(),
+    tags: arrayOrJsonString(z.string()).optional(),
     geolocation: z.string().optional(),
     resolution: z.string().optional(),
     proxy: z.string().optional(),
     notes: z.string().optional(),
     folder: z.string().optional(),
     language: z.string().optional(),
-    cookies: z.array(z.record(z.unknown())).optional(),
+    cookies: arrayOrJsonString(z.record(z.unknown())).optional(),
     type_: z.string().optional(),
     group: z.string().optional(),
     configid: z.string().optional(),
-    accounts: z.array(z.record(z.unknown())).optional(),
+    accounts: arrayOrJsonString(z.record(z.unknown())).optional(),
     timezone: z.string().optional(),
     webrtc: z.string().optional(),
     auto_allow_geo: z.boolean().optional(),
@@ -188,19 +215,19 @@ server.tool(
 
 server.tool(
   "update_profile",
-  "Update fields on an existing profile. POST /profile/update/{id}. All fields optional.",
+  'Update fields on an existing profile. POST /profile/update/{id}. All fields optional. REQUIRES profile to be STOPPED — fails with "Profile is started" if running. To remove proxy from profile pass proxy="none".',
   {
     profile_id: z.string(),
     name: z.string().optional(),
-    tags: z.array(z.string()).optional(),
+    tags: arrayOrJsonString(z.string()).optional(),
     geolocation: z.string().optional(),
     proxy: z.string().optional(),
     notes: z.string().optional(),
     folder: z.string().optional(),
-    cookies: z.array(z.record(z.unknown())).optional(),
+    cookies: arrayOrJsonString(z.record(z.unknown())).optional(),
     type_: z.string().optional(),
     group: z.string().optional(),
-    accounts: z.array(z.record(z.unknown())).optional(),
+    accounts: arrayOrJsonString(z.record(z.unknown())).optional(),
     timezone: z.string().optional(),
     extra: z.record(z.unknown()).optional(),
   },
@@ -253,21 +280,21 @@ server.tool(
 
 server.tool(
   "update_browser_version",
-  "Update Chromium kernel of profile to latest. GET /profile/updatebrowser/{id}.",
+  "Update Chromium kernel of profile to latest. GET /profile/updatebrowser/{id}. Profile should be STOPPED before updating kernel.",
   { profile_id: z.string() },
   async ({ profile_id }) => reply(await _get(`/profile/updatebrowser/${profile_id}`)),
 );
 
 server.tool(
   "clear_profile_cache",
-  "Clear only cache (keeps cookies/history/notes). GET /profile/clearcache/{id}.",
+  'Clear only cache (keeps cookies/history/notes). GET /profile/clearcache/{id}. REQUIRES profile to be STOPPED — fails with "Profile is not available!" if running.',
   { profile_id: z.string() },
   async ({ profile_id }) => reply(await _get(`/profile/clearcache/${profile_id}`)),
 );
 
 server.tool(
   "clear_profile_data",
-  "Clear ALL data of a profile. GET /profile/cleardata/{id}.",
+  'Clear ALL data of a profile. GET /profile/cleardata/{id}. REQUIRES profile to be STOPPED — fails with "Profile is not available!" if running.',
   { profile_id: z.string() },
   async ({ profile_id }) => reply(await _get(`/profile/cleardata/${profile_id}`)),
 );
@@ -290,14 +317,14 @@ server.tool(
 
 server.tool(
   "get_profile_cookies",
-  "Get cookies for a profile. GET /profile/cookies/{id}.",
+  'Get cookies for a profile. GET /profile/cookies/{id}. REQUIRES profile to be STOPPED — fails with "Unable to init cookies storage" if running.',
   { profile_id: z.string() },
   async ({ profile_id }) => reply(await _get(`/profile/cookies/${profile_id}`)),
 );
 
 server.tool(
   "clear_profile_cookies",
-  "Clear ONLY cookies. GET /profile/clearcookies/{id}.",
+  'Clear ONLY cookies. GET /profile/clearcookies/{id}. REQUIRES profile to be STOPPED — fails with "Profile is not available!" if running.',
   { profile_id: z.string() },
   async ({ profile_id }) => reply(await _get(`/profile/clearcookies/${profile_id}`)),
 );
@@ -378,6 +405,96 @@ server.tool("list_configs",   "List fingerprint configs. GET /configslist.", {},
 server.tool("list_folders",   "List profile folders. GET /folderslist.",   {}, async () => reply(await _get("/folderslist")));
 server.tool("list_timezones", "List supported timezones. GET /timezoneslist.", {}, async () => reply(await _get("/timezoneslist")));
 
+// ===== Browser automation (active tab) =====
+
+server.tool(
+  "browser_open_tab",
+  "Open a new browser tab in the active profile session. GET /browser/opentab/{id}.",
+  { profile_id: z.string() },
+  async ({ profile_id }) => reply(await _get(`/browser/opentab/${profile_id}`)),
+);
+
+server.tool(
+  "browser_open_url",
+  "Navigate the active tab to a URL. POST /browser/openurl/{id}.",
+  { profile_id: z.string(), url: z.string() },
+  async ({ profile_id, url }) => reply(await _post(`/browser/openurl/${profile_id}`, { url })),
+);
+
+server.tool(
+  "browser_click",
+  "Click element matching selector on active tab. POST /browser/click/{id}. Selector accepts CSS or XPath.",
+  { profile_id: z.string(), selector: z.string() },
+  async ({ profile_id, selector }) => reply(await _post(`/browser/click/${profile_id}`, { selector })),
+);
+
+server.tool(
+  "browser_fill",
+  "Fill input element with text on active tab. POST /browser/fill/{id}.",
+  { profile_id: z.string(), selector: z.string(), text: z.string() },
+  async ({ profile_id, selector, text }) =>
+    reply(await _post(`/browser/fill/${profile_id}`, { selector, text })),
+);
+
+server.tool(
+  "browser_select_option",
+  "Select option in <select> element on active tab. POST /browser/select/{id}.",
+  { profile_id: z.string(), selector: z.string(), value: z.string() },
+  async ({ profile_id, selector, value }) =>
+    reply(await _post(`/browser/select/${profile_id}`, { selector, value })),
+);
+
+server.tool(
+  "browser_scroll_to",
+  "Scroll element into view on active tab. POST /browser/scroll/{id}.",
+  { profile_id: z.string(), selector: z.string() },
+  async ({ profile_id, selector }) =>
+    reply(await _post(`/browser/scroll/${profile_id}`, { selector })),
+);
+
+server.tool(
+  "browser_focus",
+  "Focus element on active tab. POST /browser/focus/{id}.",
+  { profile_id: z.string(), selector: z.string() },
+  async ({ profile_id, selector }) =>
+    reply(await _post(`/browser/focus/${profile_id}`, { selector })),
+);
+
+server.tool(
+  "browser_press_key",
+  "Press a keyboard key on element in active tab (e.g. Enter, Tab, Escape). POST /browser/press/{id}.",
+  { profile_id: z.string(), selector: z.string(), key: z.string() },
+  async ({ profile_id, selector, key }) =>
+    reply(await _post(`/browser/press/${profile_id}`, { selector, key })),
+);
+
+server.tool(
+  "browser_evaluate",
+  "Run JavaScript in active page context and return result. POST /browser/evaluate/{id}.",
+  { profile_id: z.string(), script: z.string() },
+  async ({ profile_id, script }) =>
+    reply(await _post(`/browser/evaluate/${profile_id}`, { script })),
+);
+
+server.tool(
+  "browser_get_page_html",
+  "Return HTML of the active page. GET /browser/getpage/{id}.",
+  { profile_id: z.string() },
+  async ({ profile_id }) => reply(await _get(`/browser/getpage/${profile_id}`)),
+);
+
+server.tool(
+  "browser_screenshot",
+  "Capture screenshot of active page to local folder. POST /browser/screenshot/{id}. fullpage defaults to false.",
+  {
+    profile_id: z.string(),
+    path: z.string(),
+    fullpage: z.boolean().optional(),
+  },
+  async ({ profile_id, path, fullpage }) =>
+    reply(await _post(`/browser/screenshot/${profile_id}`, clean({ path, fullpage }) as Record<string, unknown>)),
+);
+
 // ===== Batch helpers — Promise.all fan-out =====
 
 server.tool(
@@ -417,7 +534,7 @@ server.tool(
 
 server.tool(
   "clear_profile_cookies_batch",
-  "Clear cookies on multiple profiles concurrently.",
+  "Clear cookies on multiple profiles concurrently. Each profile must be STOPPED — running profiles return per-item error.",
   { profile_ids: z.array(z.string()) },
   async ({ profile_ids }) =>
     reply(await Promise.all(profile_ids.map((id) => _safe(_get(`/profile/clearcookies/${id}`))))),
@@ -425,7 +542,7 @@ server.tool(
 
 server.tool(
   "clear_profile_cache_batch",
-  "Clear cache on multiple profiles concurrently.",
+  "Clear cache on multiple profiles concurrently. Each profile must be STOPPED — running profiles return per-item error.",
   { profile_ids: z.array(z.string()) },
   async ({ profile_ids }) =>
     reply(await Promise.all(profile_ids.map((id) => _safe(_get(`/profile/clearcache/${id}`))))),
@@ -441,7 +558,7 @@ server.tool(
 
 server.tool(
   "update_profiles_batch",
-  "Update multiple profiles concurrently with per-profile bodies. Each item: {profile_id, body:{...}}.",
+  'Update multiple profiles concurrently with per-profile bodies. Each item: {profile_id, body:{...}}. Each profile must be STOPPED — running profiles return per-item error. To remove proxy from a profile pass body.proxy="none".',
   {
     updates: z.array(z.object({
       profile_id: z.string(),
