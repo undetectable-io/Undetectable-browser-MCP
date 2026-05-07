@@ -88,6 +88,42 @@ function arrayOrJsonString<T extends z.ZodTypeAny>(item: T) {
   }, z.array(item));
 }
 
+// ---------- Allowed values (mirror the Undetectable program's pickers) ----------
+//
+// All create_profile fields are optional — when omitted, the program picks a
+// random fingerprint config matching whatever combination of OS / browser /
+// resolution / cpu / memory is supplied (OS takes priority). To pin a specific
+// fingerprint, pass `configid` (see list_configs).
+
+const OS_VALUES = [
+  "Windows", "Windows 7", "Windows 8", "Windows 8.1", "Windows 10",
+  "Android", "iPhone", "iPad", "Linux", "Mac",
+] as const;
+
+const BROWSER_VALUES = [
+  "Chrome", "Edge", "FireFox", "IE", "Opera", "Safari", "Yandex",
+] as const;
+
+const PROFILE_TYPE_VALUES = ["cloud", "local"] as const;
+
+const PROXY_TYPE_VALUES = ["http", "https", "socks5"] as const;
+
+const RESOLUTION_VALUES = [
+  "800x600", "960x540", "1024x768", "1152x864", "1280x720", "1280x768",
+  "1280x800", "1280x1024", "1366x768", "1408x792", "1440x900", "1400x1050",
+  "1440x1080", "1536x864", "1600x900", "1600x1024", "1600x1200", "1680x1050",
+  "1920x1080", "1920x1200", "2048x1152", "2560x1080", "2560x1440", "3440x1440",
+  "3840x2160", "5120x1440",
+] as const;
+
+const CPU_VALUES = [32, 24, 20, 16, 12, 10, 8, 7, 6, 5, 4, 3, 2, 1, 0] as const;
+const MEMORY_VALUES = [32, 16, 8, 4, 2, 1, 0] as const;
+
+// Helper: union of numeric literals (z.enum is string-only).
+const numLiteralUnion = <T extends readonly [number, ...number[]]>(values: T) =>
+  z.union(values.map((v) => z.literal(v)) as unknown as
+    [z.ZodLiteral<T[number]>, z.ZodLiteral<T[number]>, ...z.ZodLiteral<T[number]>[]]);
+
 // ---------- Server ----------
 
 const server = new McpServer({ name: "undetectable-local-api-ts", version: "1.0.0" });
@@ -161,22 +197,22 @@ server.tool(
 
 server.tool(
   "create_profile",
-  'Create a new profile. POST /profile/create. All fields optional. To create profile without proxy pass proxy="none".',
+  'Create a new profile. POST /profile/create. ALL fields optional — omitted fields fall back to the Undetectable program defaults. The program picks a random fingerprint config matching whatever combination of os_name / browser / resolution / cpu / memory you supply (os_name takes priority; passing only os_name picks any browser for that OS). For an exact fingerprint pass `configid` (see list_configs). To create profile without proxy pass proxy="none".',
   {
     name: z.string().optional(),
-    os_name: z.string().optional(),
-    browser: z.string().optional(),
-    cpu: z.number().optional(),
-    memory: z.number().optional(),
+    os_name: z.enum(OS_VALUES).optional(),
+    browser: z.enum(BROWSER_VALUES).optional(),
+    cpu: numLiteralUnion(CPU_VALUES).optional(),
+    memory: numLiteralUnion(MEMORY_VALUES).optional(),
     tags: arrayOrJsonString(z.string()).optional(),
     geolocation: z.string().optional(),
-    resolution: z.string().optional(),
+    resolution: z.enum(RESOLUTION_VALUES).optional(),
     proxy: z.string().optional(),
     notes: z.string().optional(),
     folder: z.string().optional(),
     language: z.string().optional(),
     cookies: arrayOrJsonString(z.record(z.unknown())).optional(),
-    type_: z.string().optional(),
+    type_: z.enum(PROFILE_TYPE_VALUES).optional(),
     group: z.string().optional(),
     configid: z.string().optional(),
     accounts: arrayOrJsonString(z.record(z.unknown())).optional(),
@@ -225,7 +261,7 @@ server.tool(
     notes: z.string().optional(),
     folder: z.string().optional(),
     cookies: arrayOrJsonString(z.record(z.unknown())).optional(),
-    type_: z.string().optional(),
+    type_: z.enum(PROFILE_TYPE_VALUES).optional(),
     group: z.string().optional(),
     accounts: arrayOrJsonString(z.record(z.unknown())).optional(),
     timezone: z.string().optional(),
@@ -343,7 +379,7 @@ server.tool(
   "Add a proxy. POST /proxies/add. Port accepts string or number.",
   {
     name: z.string(),
-    type: z.string(),
+    type: z.enum(PROXY_TYPE_VALUES),
     host: z.string(),
     port: z.union([z.string(), z.number()]),
     login: z.string().optional(),
@@ -375,7 +411,7 @@ server.tool(
   {
     proxy_id: z.string(),
     name: z.string().optional(),
-    type: z.string().optional(),
+    type: z.enum(PROXY_TYPE_VALUES).optional(),
     host: z.string().optional(),
     port: z.union([z.string(), z.number()]).optional(),
     login: z.string().optional(),
@@ -401,7 +437,7 @@ server.tool(
 // ===== Groups / Configs / Folders / Timezones =====
 
 server.tool("list_groups",    "List cloud groups. GET /groupslist.",       {}, async () => reply(await _get("/groupslist")));
-server.tool("list_configs",   "List fingerprint configs. GET /configslist.", {}, async () => reply(await _get("/configslist")));
+server.tool("list_configs",   "List fingerprint configs available to the program. GET /configslist. Each entry has a `configid` you can pass to create_profile to pin an exact fingerprint instead of letting the program pick a random one matching os_name/browser.", {}, async () => reply(await _get("/configslist")));
 server.tool("list_folders",   "List profile folders. GET /folderslist.",   {}, async () => reply(await _get("/folderslist")));
 server.tool("list_timezones", "List supported timezones. GET /timezoneslist.", {}, async () => reply(await _get("/timezoneslist")));
 
