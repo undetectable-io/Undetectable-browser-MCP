@@ -45,6 +45,16 @@ node dist/server.js
 
 
 
+> ⚠️ **Warning — AI gets full API access.**
+> Once this MCP server is connected, the AI assistant can call **every** endpoint
+> listed below, including destructive ones: deleting profiles, wiping cookies
+> and cache, closing the Undetectable program, sending profiles to / from the
+> cloud, and driving the browser (clicks, navigation, JS execution). The server
+> does **not** ask for per-action confirmation. Treat the AI as a user with
+> full access to your antidetect setup. Review tool calls before approving
+> them in your MCP client, keep backups of important profiles, and avoid
+> connecting the server to environments you cannot afford to lose.
+
 ## Tools
 
 27 profile/proxy/listing tools + 11 browser-automation tools + 7 batch tools + `raw_request`.
