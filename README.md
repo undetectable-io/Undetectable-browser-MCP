@@ -69,13 +69,3 @@ node dist/server.js
 `get_profile_info_batch`, `update_profiles_batch`.
 
 **Escape hatch:** `raw_request`.
-
-## Notes
-
-- Profile mutation/inspection endpoints (`update_profile`, `clear_profile_cache`,
-  `clear_profile_cookies`, `clear_profile_data`, `get_profile_cookies`,
-  `update_browser_version`) require the profile to be **stopped** — running
-  profiles return errors like `"Profile is started"` or
-  `"Unable to init cookies storage"`. Call `stop_profile` first.
-- To create a profile without a proxy, or to remove an existing proxy from a
-  profile, pass `proxy="none"` to `create_profile` / `update_profile`.
