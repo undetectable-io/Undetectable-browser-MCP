@@ -43,7 +43,105 @@ npm run build
 node dist/server.js
 ```
 
+## Connect to other AI clients
 
+This server speaks the standard MCP stdio transport, so any MCP-aware
+client can use it. The package is published on npm, so most clients can
+launch it directly via `npx` with no install step.
+
+### Claude Code (CLI)
+
+```bash
+claude mcp add undetectable-ts -s user -- npx -y undetectable-local-api-mcp-ts
+```
+
+Pass `-e KEY=VAL` flags to override `UNDETECTABLE_BASE_URL` /
+`UNDETECTABLE_TIMEOUT` if needed.
+
+### Claude Desktop
+
+Already covered in the **Install** block above. Config file lives at:
+
+- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+
+### Cursor
+
+Edit `.cursor/mcp.json` (project) or `~/.cursor/mcp.json` (global):
+
+```json
+{
+  "mcpServers": {
+    "undetectable-local-api-ts": {
+      "command": "npx",
+      "args": ["-y", "undetectable-local-api-mcp-ts"]
+    }
+  }
+}
+```
+
+### Windsurf (Codeium)
+
+Edit `~/.codeium/windsurf/mcp_config.json` with the same JSON shape as
+Cursor above.
+
+### Cline (VS Code extension)
+
+Open the Cline panel → MCP Servers → "Edit MCP Settings" and paste the
+same `mcpServers` block.
+
+### Continue.dev (VS Code / JetBrains)
+
+Edit `~/.continue/config.json` and add the server under
+`experimental.modelContextProtocolServers` with `command: "npx"` and
+`args: ["-y", "undetectable-local-api-mcp-ts"]`.
+
+### Zed
+
+Edit `settings.json` (`cmd/ctrl + ,`) and add the server under
+`"context_servers"`:
+
+```json
+"context_servers": {
+  "undetectable-local-api-ts": {
+    "command": { "path": "npx", "args": ["-y", "undetectable-local-api-mcp-ts"] }
+  }
+}
+```
+
+### Codex CLI (OpenAI)
+
+Edit `~/.codex/config.toml`:
+
+```toml
+[mcp_servers.undetectable-local-api-ts]
+command = "npx"
+args = ["-y", "undetectable-local-api-mcp-ts"]
+```
+
+### Goose (Block)
+
+Edit `~/.config/goose/config.yaml` and add:
+
+```yaml
+extensions:
+  undetectable-local-api-ts:
+    type: stdio
+    command: npx
+    args: ["-y", "undetectable-local-api-mcp-ts"]
+```
+
+### Anything else
+
+Any client that accepts a `command` + `args` stdio spawn will work. Use:
+
+```
+command: npx
+args:    -y undetectable-local-api-mcp-ts
+```
+
+For self-built binaries, swap to `command: node` and
+`args: ["<ABS_PATH>/dist/server.js"]`.
 
 > ⚠️ **Warning — AI gets full API access.**
 > Once this MCP server is connected, the AI assistant can call **every** endpoint
