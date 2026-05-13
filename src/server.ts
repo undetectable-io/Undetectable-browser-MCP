@@ -153,7 +153,16 @@ server.tool(
 //   return errors like "Profile is started", "Profile is not available!" or
 //   "Unable to init cookies storage". Call stop_profile first if needed.
 //
-// Proxy convention:
+// Proxy format (Undetectable-specific, NOT standard URL form):
+//   "TYPE://IP:PORT:LOGIN:PASS"   — colon-separated, login/pass optional.
+//   Examples:
+//     "socks5://127.0.0.1:60000"                        (no auth)
+//     "socks5://proxy.example.com:2333:user:pass"       (with auth)
+//     "http://1.2.3.4:8080:user:pass"
+//   Standard URL form "socks5://user:pass@host:port" is rejected silently
+//   (proxy ends up as "None"). Alternatively pass a numeric proxy_id from
+//   add_proxy / list_proxies in the `proxy` field — the program resolves it
+//   to the canonical "TYPE://IP:PORT:LOGIN:PASS" string automatically.
 //   To create or update a profile WITHOUT a proxy (or to remove an existing
 //   proxy from a profile), pass proxy="none" in create_profile / update_profile.
 //
@@ -197,7 +206,7 @@ server.tool(
 
 server.tool(
   "create_profile",
-  'Create a new profile. POST /profile/create. ALL fields optional — omitted fields fall back to the Undetectable program defaults. The program picks a random fingerprint config matching whatever combination of os_name / browser / resolution / cpu / memory you supply (os_name takes priority; passing only os_name picks any browser for that OS). For an exact fingerprint pass `configid` (see list_configs). To create profile without proxy pass proxy="none". Recommended defaults: desktop = host OS (Windows or Mac) + browser="Chrome"; mobile = os_name="Android" + browser="Chrome". Avoid FireFox / Safari — their engines (Gecko / WebKit) are emulated less faithfully than Chromium and detection rates are higher.',
+  'Create a new profile. POST /profile/create. ALL fields optional — omitted fields fall back to the Undetectable program defaults. The program picks a random fingerprint config matching whatever combination of os_name / browser / resolution / cpu / memory you supply (os_name takes priority; passing only os_name picks any browser for that OS). For an exact fingerprint pass `configid` (see list_configs). Recommended defaults: desktop = host OS (Windows or Mac) + browser="Chrome"; mobile = os_name="Android" + browser="Chrome". Avoid FireFox / Safari — their engines (Gecko / WebKit) are emulated less faithfully than Chromium and detection rates are higher. Proxy format is Undetectable-specific: "TYPE://IP:PORT:LOGIN:PASS" (colon-separated, login/pass optional, e.g. "socks5://127.0.0.1:60000" or "socks5://host:2333:user:pass"). Standard URL form "socks5://user:pass@host:port" is NOT accepted — proxy ends up as "None". You may also pass a numeric proxy_id from list_proxies in `proxy`. Pass proxy="none" to create the profile without a proxy.',
   {
     name: z.string().optional(),
     os_name: z.enum(OS_VALUES).optional(),
@@ -251,7 +260,7 @@ server.tool(
 
 server.tool(
   "update_profile",
-  'Update fields on an existing profile. POST /profile/update/{id}. All fields optional. REQUIRES profile to be STOPPED — fails with "Profile is started" if running. To remove proxy from profile pass proxy="none".',
+  'Update fields on an existing profile. POST /profile/update/{id}. All fields optional. REQUIRES profile to be STOPPED — fails with "Profile is started" if running, so call stop_profile first. Proxy format is Undetectable-specific: "TYPE://IP:PORT:LOGIN:PASS" (colon-separated, login/pass optional, e.g. "socks5://127.0.0.1:60000" or "socks5://host:2333:user:pass"). Standard URL form "socks5://user:pass@host:port" is NOT accepted — proxy ends up as "None". You may also pass a numeric proxy_id from list_proxies in `proxy`. Pass proxy="none" to remove the proxy.',
   {
     profile_id: z.string(),
     name: z.string().optional(),
@@ -594,7 +603,7 @@ server.tool(
 
 server.tool(
   "update_profiles_batch",
-  'Update multiple profiles concurrently with per-profile bodies. Each item: {profile_id, body:{...}}. Each profile must be STOPPED — running profiles return per-item error. To remove proxy from a profile pass body.proxy="none".',
+  'Update multiple profiles concurrently with per-profile bodies. Each item: {profile_id, body:{...}}. Each profile must be STOPPED — running profiles return per-item error. Same proxy format as update_profile: "TYPE://IP:PORT:LOGIN:PASS" colon-separated (login/pass optional), or a numeric proxy_id, or "none" to remove.',
   {
     updates: z.array(z.object({
       profile_id: z.string(),
